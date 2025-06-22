@@ -1,8 +1,8 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt")
-    id("dagger.hilt.android.plugin")
 }
 
 android {
@@ -16,10 +16,25 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        manifestPlaceholders["appAuthRedirectScheme"] = ""
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // Define the BuildConfig field
+        val properties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { properties.load(it) }
+        }
+        val hfAccessToken = properties.getProperty("HF_ACCESS_TOKEN", "")
+        buildConfigField("String", "HF_ACCESS_TOKEN", "\"$hfAccessToken\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -65,27 +80,13 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("com.google.android.material:material:1.12.0")
 
     implementation ("com.google.mediapipe:tasks-genai:0.10.21")
 
-    //Retrofit2
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation ("com.google.code.gson:gson:2.8.9")
-    //okHttp
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.9.3")
-    //Coroutine + Flow
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    //Hilt
-    implementation("com.google.dagger:hilt-android:2.46.1")
-    kapt("com.google.dagger:hilt-compiler:2.46.1")
-    // When using Kotlin.
-    kapt("androidx.hilt:hilt-compiler:1.0.0")
-    //Navigation
-    implementation("androidx.navigation:navigation-compose:2.7.2")
-    implementation("androidx.hilt:hilt-navigation-compose:1.1.0-alpha01")
+    implementation("net.openid:appauth:0.11.1") // Add AppAuth for OAuth support
+    implementation("androidx.security:security-crypto:1.0.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

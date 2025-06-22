@@ -1,8 +1,6 @@
 package com.google.mediapipe.examples.llminference
 
-import android.app.Application
 import androidx.compose.runtime.toMutableStateList
-import dagger.hilt.android.HiltAndroidApp
 
 const val USER_PREFIX = "user"
 const val MODEL_PREFIX = "model"
@@ -127,7 +125,7 @@ class GemmaUiState(
 
 
 /** An implementation of [UiState] to be used with the DeepSeek model. */
-class DeepSeeUiState(
+class DeepSeekUiState(
     messages: List<ChatMessage> = emptyList()
 ) : UiState {
     private var START_TOKEN = "<｜begin▁of▁sentence｜>"
