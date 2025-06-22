@@ -1,6 +1,7 @@
 package com.google.mediapipe.examples.llminference
 
 import android.content.Context
+import android.util.Log
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import com.google.mediapipe.tasks.genai.llminference.LlmInferenceSession
 import com.google.mediapipe.tasks.genai.llminference.LlmInferenceSession.LlmInferenceSessionOptions
@@ -10,9 +11,13 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
+class ModelLoadFailException :
+    Exception("Failed to load model, please try again")
+
 class InferenceModel private constructor(context: Context) {
     private var llmInference: LlmInference
     private var llmInferenceSession: LlmInferenceSession
+    private val TAG = InferenceModel::class.qualifiedName
 
     private val _partialResults = MutableSharedFlow<Pair<String, Boolean>>(
         extraBufferCapacity = 1,
@@ -41,8 +46,14 @@ class InferenceModel private constructor(context: Context) {
             .build()
 
         uiState = model.uiState
-        llmInference = LlmInference.createFromOptions(context, inferenceOptions)
-        llmInferenceSession = LlmInferenceSession.createFromOptions(llmInference, sessionOptions)
+        try {
+            llmInference = LlmInference.createFromOptions(context, inferenceOptions)
+            llmInferenceSession =
+                LlmInferenceSession.createFromOptions(llmInference, sessionOptions)
+        } catch (e: Exception) {
+            Log.e(TAG, "Load model error: ${e.message}", e)
+            throw ModelLoadFailException()
+        }
     }
 
     fun generateResponseAsync(prompt: String) {
@@ -57,7 +68,7 @@ class InferenceModel private constructor(context: Context) {
     }
 
     companion object {
-        var model: Model = Model.MODEL_LOAD
+        var model: Model = Model.GEMMA_CPU
         private var instance: InferenceModel? = null
 
         fun getInstance(context: Context): InferenceModel {
@@ -78,7 +89,7 @@ class InferenceModel private constructor(context: Context) {
 
             return when {
                 modelFile.exists() -> model.path
-                contextFile.exists() -> contextFile.absolutePath //android specific directory
+                contextFile.exists() -> contextFile.absolutePath
                 else -> ""
             }
         }

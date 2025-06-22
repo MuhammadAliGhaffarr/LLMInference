@@ -1,7 +1,6 @@
 package com.google.mediapipe.examples.llminference
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -25,33 +24,18 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.google.mediapipe.examples.llminference.data.utilities.CHAT_SCREEN
-import com.google.mediapipe.examples.llminference.data.utilities.DeviceInfoUtils
-import com.google.mediapipe.examples.llminference.data.utilities.LOAD_SCREEN
-import com.google.mediapipe.examples.llminference.data.utilities.RECOMMEDED_MODELS_SCREEN
-import com.google.mediapipe.examples.llminference.data.utilities.START_SCREEN
-import com.google.mediapipe.examples.llminference.navigation.NavigationHost
 import com.google.mediapipe.examples.llminference.services.ModelDownloadService
 import com.google.mediapipe.examples.llminference.services.NotificationService
 import com.google.mediapipe.examples.llminference.ui.theme.LLMInferenceTheme
-import dagger.hilt.android.AndroidEntryPoint
 
+const val START_SCREEN = "start_screen"
+const val LOAD_SCREEN = "load_screen"
+const val CHAT_SCREEN = "chat_screen"
 
-
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    private lateinit var notificationService: NotificationService
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        notificationService = NotificationService()
-
-        Log.d("AliTag", DeviceInfoUtils.getDeviceInfo(this).toString())
-        val showPopup = intent?.getBooleanExtra("showPopup", false) ?: false
-
         setContent {
-            notificationService.RequestNotificationPermission()
             LLMInferenceTheme {
                 Scaffold(
                     topBar = { AppBar() }
@@ -63,66 +47,53 @@ class MainActivity : ComponentActivity() {
                             .padding(innerPadding),
                         color = MaterialTheme.colorScheme.background,
                     ) {
+                        val navController = rememberNavController()
+                        val startDestination = intent.getStringExtra("NAVIGATE_TO") ?: START_SCREEN
 
-                        NavigationHost(intent)
+                        NavHost(
+                            navController = navController,
+                            startDestination = startDestination
+                        ) {
+                            composable(START_SCREEN) {
+                                SelectionRoute(
+                                    onModelSelected = {
+                                        navController.navigate(LOAD_SCREEN) {
+                                            popUpTo(START_SCREEN) { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                )
+                            }
 
-//                        val navController = rememberNavController()
-//
-//                        NavHost(
-//                            navController = navController,
-//                            startDestination = RECOMMEDED_MODELS_SCREEN
-//                        ) {
-//                            composable(RECOMMEDED_MODELS_SCREEN) {
-//                                RecommendedModelsScreen(
-//                                    onModelSelected = { it ->
-//                                        navController.navigate(START_SCREEN) {
-//                                            popUpTo(RECOMMEDED_MODELS_SCREEN) { inclusive = true }
-//                                            launchSingleTop = true
-//                                        }
-//                                    }
-//                                )
-//                            }
-//                            composable(START_SCREEN) {
-//                                SelectionRoute(
-//                                    onModelSelected = {
-//                                        navController.navigate(LOAD_SCREEN) {
-//                                            popUpTo(START_SCREEN) { inclusive = true }
-//                                            launchSingleTop = true
-//                                        }
-//                                    },
-//                                    showPopup = showPopup
-//                                )
-//                            }
-//
-//                            composable(LOAD_SCREEN) {
-//                                LoadingRoute(
-//                                    onModelLoaded = {
-//                                        navController.navigate(CHAT_SCREEN) {
-//                                            popUpTo(LOAD_SCREEN) { inclusive = true }
-//                                            launchSingleTop = true
-//                                        }
-//                                    },
-//                                    onGoBack = {
-//                                        navController.navigate(START_SCREEN) {
-//                                            popUpTo(LOAD_SCREEN) { inclusive = true }
-//                                            launchSingleTop = true
-//                                        }
-//                                    },
-//                                    modelDownloadService = ModelDownloadService(),
-//                                    notificationService = notificationService
-//                                )
-//                            }
-//
-//                            composable(CHAT_SCREEN) {
-//                                ChatRoute(
-//                                    onClose = {
-//                                        navController.navigate(START_SCREEN) {
-//                                            popUpTo(LOAD_SCREEN) { inclusive = true }
-//                                            launchSingleTop = true
-//                                        }
-//                                    })
-//                            }
-//                        }
+                            composable(LOAD_SCREEN) {
+                                LoadingRoute(
+                                    onModelLoaded = {
+                                        navController.navigate(CHAT_SCREEN) {
+                                            popUpTo(LOAD_SCREEN) { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    },
+                                    onGoBack = {
+                                        navController.navigate(START_SCREEN) {
+                                            popUpTo(LOAD_SCREEN) { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    },
+                                    modelDownloadService = ModelDownloadService(),
+                                    notificationService = NotificationService()
+                                )
+                            }
+
+                            composable(CHAT_SCREEN) {
+                                ChatRoute(
+                                    onClose = {
+                                        navController.navigate(START_SCREEN) {
+                                            popUpTo(LOAD_SCREEN) { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    })
+                            }
+                        }
                     }
                 }
             }
